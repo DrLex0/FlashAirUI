@@ -40,7 +40,7 @@ After installing and configuring the card, unplug it and insert it into the devi
 If you have set up the card in client mode, enter http://yourCardsAddress/ in a browser, where ‘yourCardsAddress’ is either the ID you configured, or the IP_Address if you disabled DHCP. If you use it in AP mode, connect to the card's wifi network, and go to http://192.168.0.1/.
 
 The interface is quite straightforward, although moving files probably doesn't work the way you're used to from a typical Windows or Mac OS interface. Instead, it works more like the Android file browser: click the checkboxes to the left of the files you want to move, go to the directory where you want them to end up, and then click the ‘Move selections here’ button. You can select multiple files in multiple different folders at once.
-The ‘⨂’ icon deletes a file, the pencil (✎) icon allows to rename it. If you don't see these icons, you need a more Unicode-compliant browser or computer, the same goes for the file and folder icons which are all plain Unicode characters.
+The ‘⨂’ icon deletes a file, the pencil (✎) icon allows to rename it. If you don't see these icons, you need a more Unicode-compliant browser or computer, the same goes for the file and folder icons (🗒, 📁) which are all plain Unicode characters.
 
 To upload a file, go to the folder where you want it, click the ‘Choose file’ button, and then ‘Upload’. You can only upload one file at a time.
 
@@ -49,8 +49,8 @@ Folders can only be deleted when they are empty, by using the ‘Delete empty fo
 ### Limitations
 As soon as you have made any modification to the filesystem through the web interface, e.g. uploaded, moved, renamed, or deleted a file, the device the card is mounted in can no longer write to the card. It might appear as if writing works, but any changes will be lost. The idea is that you do everything through this web UI, and only read files on the device containing the card. You must force the device to re-read the card every time you have made any change to it.
 
-Some things you should not try in the web UI because they are likely to fail:
-1. Do any other write operation while an upload is still ongoing. In fact, trying anything at all while uploading might cause the upload or other operation to fail. This is why using the card in AP mode is a bad idea because uploads can take ages.
-2. Keep piling up an insane amount of files in a single directory. At some point the limited CGI interface of the FlashAir will probably bump into a limit. Spread files over multiple directories.
-3. Make deep directory trees. Renaming or deleting files with extremely long filesystem paths will fail.
-4. Use multiple consecutive spaces in file names. This will cause certain operations to fail due to limitations of the Lua interface.
+Some things you should **not** try in the web UI because they are likely to fail:
+1. Don't try to do any other write operation while an upload is still ongoing. In fact, trying anything at all while uploading might cause the upload or other operation to fail. This is why using the card in AP mode is a bad idea because uploads can take ages.
+2. Don't keep piling up an insane amount of files in a single directory. At some point the limited CGI interface of the FlashAir will probably bump into a limit. Spread files over multiple directories.
+3. Don't make deep directory trees. Renaming or deleting files with extremely long filesystem paths will fail.
+4. Don't use multiple consecutive spaces in file names. This will cause certain operations to fail due to limitations of the Lua interface.
