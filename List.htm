@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!-- FlashAir Fancy Web Interface by Dr. Lex
+ * Released under BSD 2-Clause License.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.-->
+<html>
+<head>
+<title>FlashAir</title>
+<meta charset="UTF-8">
+<script type="text/javascript" src="/SD_WLAN/js/jquery.js"></script>
+<script type="text/javascript" src="/SD_WLAN/js/main.js"></script>
+<style type="text/css">
+a {text-decoration: none}
+a.dir:before {content: "📁"; margin-right: .75em}
+a.file:before {content: "🗒"; margin-right: .75em}
+a.del:link {color: #C33}
+h1 a:link {color: #006}
+a:link {color: #00C}
+a:hover {color: #6CF !important}
+.busy:after {content: url('/SD_WLAN/spin.gif'); margin-left: .2em}
+input.selectMove {margin-right: .75em}
+td.col_file {padding-right: 1em}
+td.col_ren {padding-left: .2em}
+td.col_ren a:link {color: #006}
+#header {font-size: 2em; line-height: 1.6em; font-weight: bold; background: #EEE; border-bottom: 1px solid #333; padding: 0 .5em}
+#list {padding: .25em .5em}
+#footer {font-size: .85em; font-style: italic; background: #EEE; border-top: 1px solid #333; padding: .4em .5em}
+#tools {background: #DDD; border-top: 1px solid #333; padding: .4em .5em}
+/* Fixed header & footer lay-out based on example by Pangloss on StackOverflow */
+html, body {height: 100%; margin: 0}
+#wrapper {height: 100%; width: 100%; display: table}
+#fixedHeader, #content, #fixedFooter {display: table-row}
+.inner {display: table-cell}
+#content .inner {height: 100%; position: relative}
+.scrollable {position: absolute; left: 0; right: 0; top: 0; bottom: 0;  overflow: auto}
+</style>
+</head>
+<body>
+
+<div id="wrapper">
+
+<div id="fixedHeader">
+	<div class="inner">
+		<div id="header">header</div>
+	</div>
+</div>
+
+<div id="content">
+	<div class="inner">
+		<div class="scrollable">
+			<div id="list"></div>
+		</div>
+	</div>
+</div>
+
+<div id="fixedFooter">
+	<div class="inner">
+		<div id="footer">footer</div>
+
+		<div id="tools">
+			<input type="file" id='file' name='file'> <button id="cmdUpload">Upload</button><br>
+			<hr>
+			<button id="cmdNewDir">Create Folder…</button>&nbsp; <button id="cmdDelDir" disabled="disabled">Delete empty folder</button> &nbsp;&nbsp; <button id="cmdMove" disabled="disabled">Move selections here</button>&nbsp; <button id="cmdClearMove" disabled="disabled">Clear selections</button>
+		</div>
+	</div>
+</div><!--fixedFooter-->
+
+</div><!--wrapper-->
+
+</body>
+</html>
