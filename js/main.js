@@ -12,6 +12,21 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/************************** Configurable bits **************************/
+
+// If this value is non-zero, a confirmation dialog will be shown when trying to upload files with
+// a name longer than this number of characters.
+var maxNameLength = 31;  // Sailfish seems to skip anything with more than 31 characters
+
+// If a file has one of these extensions (must be listed in lowercase), show a confirmation
+// dialog when uploading. I really need this because I keep on uploading .gcode files instead
+// of their .x3g conversions.
+var warnExtensions = ["gcode"];
+
+/************************** No user serviceable parts below **************************/
+
+var version = "1.1a";
+
 // Judge the card is V1 or V2.
 function isV1(wlansd) {
 	if( wlansd.length == undefined || wlansd.length == 0 ) {
@@ -262,6 +277,23 @@ function checkMoveAllowed(path) {
 
 //UploadProcess
 function doUpload() {
+	var uploadFile = $('#file')[0].files[0];
+	var fileName = uploadFile.name;
+	var abort = false;
+	$.each(warnExtensions, function(index, value) {
+		if(fileName.toLowerCase().endsWith("." + value)) {
+			if(! confirm("Are you sure you want to upload a ‘." + value + "’ file?"))
+				abort = true;
+			return false;
+		}
+	});
+	if(abort)
+		return false;
+	if(maxNameLength && fileName.length > maxNameLength) {
+		if(! confirm("This file has a name longer than " + maxNameLength + " characters (" +
+		             fileName.length + "), which may cause problems. Proceed?"))
+			return false;
+	}
 	var path = makePath(".");
 	var cgi = "/upload.cgi";
 	var timestring;
@@ -277,7 +309,6 @@ function doUpload() {
 	$("#cmdUpload").html('Uploading…');
 	$("#cmdUpload").addClass("busy");
 	$.get(cgi + "?WRITEPROTECT=ON&UPDIR=" + path + "&FTIME=" + timestring, function() {
-		var uploadFile = $('#file')[0].files[0];
 		var fd = new FormData();
 		fd.append("file", uploadFile);
 		$.ajax({ url: cgi,
@@ -323,7 +354,7 @@ function doDelete(fileName) {
 
 // Rename a file or folder
 function doRename(fileName) {
-	var newName = window.prompt("New name:", "");
+	var newName = window.prompt("New name:", fileName);
 	if(! newName)
 		return;
 	var regExpInvalidChars = new RegExp(/[\/\\?%:|<>*]+/g);
@@ -393,6 +424,9 @@ function doMove() {
 	// no longer than about 155 bytes, therefore passing paths via query parameters will fail as soon as there are a
 	// few files with long paths or names.
 	// Hence I work around this by uploading the parameters as a fake file, and have lua read this file.
+	// This is still limited because the lua interpreter will easily run out of memory, but it should generally be
+	// possible to move about 32 files when using reasonably short path names.
+	// TODO: automatically split up large moves into smaller chunks and do them sequentially.
 	$("#cmdMove").prop("disabled",true);
 	$("#cmdMove").addClass("busy");
 	var target = makePath(".");
@@ -501,4 +535,6 @@ $(function() {
 		clearMove();
 		return false;
 	});
+
+	$("#version").html("v" + version);
 });

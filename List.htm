@@ -32,6 +32,7 @@ td.col_ren a:link {color: #006}
 #header {font-size: 2em; line-height: 1.6em; font-weight: bold; background: #EEE; border-bottom: 1px solid #333; padding: 0 .5em}
 #list {padding: .25em .5em}
 #footer {font-size: .85em; font-style: italic; background: #EEE; border-top: 1px solid #333; padding: .4em .5em}
+#version {font-size: .85em; padding: .4em .5em; display: block; float: right}
 #tools {background: #DDD; border-top: 1px solid #333; padding: .4em .5em}
 /* Fixed header & footer lay-out based on example by Pangloss on StackOverflow */
 html, body {height: 100%; margin: 0}
@@ -62,8 +63,8 @@ html, body {height: 100%; margin: 0}
 
 <div id="fixedFooter">
 	<div class="inner">
+		<div id="version"></div>
 		<div id="footer">footer</div>
-
 		<div id="tools">
 			<input type="file" id='file' name='file'> <button id="cmdUpload">Upload</button><br>
 			<hr>
