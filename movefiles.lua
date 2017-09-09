@@ -98,8 +98,19 @@ for i=1, #sources, 1 do
 	if sourcePath ~= targetPath then
 		-- os.rename does not work and the alternative fa.rename has no return value, hence success of the operation must be tested separately
 		fa.rename(sourcePath, targetPath)
-		if lfs.attributes(targetPath) == nil or lfs.attributes(sourcePath) ~= nil then
-			printHttp("ERROR: failed to move '" .. sourcePath .. "' to '" .. targetPath .. "', stopping move at this point")
+		local failure = ""
+		if lfs.attributes(targetPath) == nil then
+			-- Checking attributes will sometimes fail when executed too soon after rename, therefore retry.
+			sleep(100)  -- sleep, the secret sauce of fixing problems that shouldn't even occur.
+			if lfs.attributes(targetPath) == nil then
+				failure = failure .. "[target not found]"
+			end
+		end
+		if lfs.attributes(sourcePath) ~= nil then
+			failure = failure .. "[source still exists]"
+		end
+		if failure ~= "" then
+			printHttp("ERROR: failed to move '" .. sourcePath .. "' to '" .. targetPath .. "' " .. failure .. ". Stopping move at this point")
 			return
 		end
 	end

@@ -53,14 +53,15 @@ As soon as you have made any modification to the filesystem through the web inte
 
 You cannot move a folder inside a subfolder of itself. The ‘Move selections’ folder will become greyed out in case you try it. This is not just a technical limitation, it is a blatant violation of the fabric of logic itself.
 
-You will have to upload one file at a time for now. If you want to put a huge number of files on the card, it is probably more convenient to plug it directly into your computer anyway. However, I'll try to add a sequential upload some day…
+You will have to upload one file at a time for now. If you want to put a huge number of files on the card, it is probably more convenient to plug it directly into your computer anyway. However, I'll try to implement multi-file upload some day…
+
+Files can only be deleted one at a time for now. Again, deleting many files will be more convenient on a computer, and making it possible to delete multiple selected files at once, is on my TODO list.
 
 Some things you should **not** try in the web UI because they are likely to fail:
-1. Don't try to do any other write operation while an upload is still ongoing. In fact, trying anything at all while uploading might cause the upload or other operation to fail. This is why using the card in AP mode is a bad idea because uploads can take ages.
+1. Don't try to do two things at once. Operations that are expected to take long, will be blocked with a ‘glass pane’ to protect you from doing this, but you may still get into trouble if you start clicking around like a monkey. This is why using the card in AP mode is a bad idea because uploads can take ages and you will also be blocked out of the interface for ages.
 2. Don't keep piling up an insane amount of files in a single directory. At some point the limited CGI interface of the FlashAir will probably bump into a limit. Spread files over multiple directories.
 3. Don't make deep directory trees. Renaming or deleting files with extremely long filesystem paths will fail.
 4. Don't use multiple consecutive spaces in file names. This will cause certain operations to fail due to limitations of the Lua interface.
-5. Don't try to move more than about 32 files in one single operation, because the Lua interpreter will run out of memory. (I'll try to work around this in a future version by doing the operation in multiple chunks.)
 
 ## Legal
 See the license file for details. Just to make it absolutely clear: this is provided without any warranties of any kind. Use at your own risk.

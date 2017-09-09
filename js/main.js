@@ -27,6 +27,10 @@ var warnExtensions = ["gcode"];
 
 var version = "1.1a";
 
+var fileList = [];
+var fileIndices = {};  // File names vs. index in list
+var lastCheckedIndex = null;
+
 // Judge the card is V1 or V2.
 function isV1(wlansd) {
 	if( wlansd.length == undefined || wlansd.length == 0 ) {
@@ -96,6 +100,7 @@ function showFreeSpace(numItems) {
 }
 
 function setBusy() {
+	// Shows spinner in top left, for operations that should not take long
 	$("#header").children("h1").addClass("busy");
 }
 
@@ -103,10 +108,28 @@ function clearBusy() {
 	$("#header").children("h1").removeClass("busy");
 }
 
+function setGlass(title, message) {
+	// Blocks the entire page with a glass window, for operations that take long and hog the card's processor
+	$("#glassAction").html(title);
+	$("#glassMessage").html(message);
+	$("#glassPane").css("display", "inline");
+}
+
+function setGlassStatus(message) {
+	$("#glassMessage").html(message);
+}
+
+function clearGlass() {
+	$("#glassPane").css("display", "none");
+}
+
 // Show file list
 function showFileList(path) {
 	// Clear box.
 	$("#list").html('');
+	fileList = [];
+	fileIndices = {};
+	lastCheckedIndex = null;
 
 	// Construct clickable path in header
 	var pathItems = path.split(/\//g);
@@ -142,6 +165,7 @@ function showFileList(path) {
 	var pathSlashed = path;
 	if(! path.endsWith("/"))
 		pathSlashed += "/";
+	var index = 0;
 	$.each(wlansd, function() {
 		var file = this;
 		isEmpty = false;
@@ -175,6 +199,10 @@ function showFileList(path) {
 		row.append($("<td></td>").addClass("col_del").append(delLink));
 		row.append($("<td></td>").addClass("col_ren").append(renLink));
 		table.append(row);
+
+		fileList.push(caption);
+		fileIndices[caption] = index;
+		index++;
 	});
 	$("#list").append(table);
 	if(isEmpty)
@@ -236,17 +264,34 @@ function getFileList(dir) {
 }
 
 //Update set of files selected for moving
-function setMoveSelection(name, checked) {
+function setMoveSelection(name, checked, shiftKey) {
+	var start = fileIndices[name];
+	var stop = start;
+	if(shiftKey && lastCheckedIndex !== null) {
+		stop = lastCheckedIndex;
+		if(stop < start) {
+			stop = start;
+			start = lastCheckedIndex;
+		}
+	}
 	var path = makePath(".");
 	if(path != "/")
 		path += "/";
-	var fullPath = path + name;
-	if(checked)
-		moveSelections[fullPath] = true;
-	else if(moveSelections[fullPath]) {
-		delete moveSelections[fullPath];
+	for(var i = start; i <= stop; i++) {
+		var fullPath = path + fileList[i];
+		if(checked)
+			moveSelections[fullPath] = true;
+		else if(moveSelections[fullPath]) {
+			delete moveSelections[fullPath];
+		}
 	}
-	checkMoveAllowed(path);
+
+	if(shiftKey)
+		showFileList(currentPath);  // refresh the whole list to update other checkboxes
+	else {
+		checkMoveAllowed(path);
+	}
+	lastCheckedIndex = fileIndices[name];
 }
 
 function checkMoveAllowed(path) {
@@ -308,6 +353,7 @@ function doUpload() {
 	$("#cmdUpload").prop("disabled",true);
 	$("#cmdUpload").html('Uploading…');
 	$("#cmdUpload").addClass("busy");
+	setGlass("Uploading…", "Uploading ‘" + fileName + "’");
 	$.get(cgi + "?WRITEPROTECT=ON&UPDIR=" + path + "&FTIME=" + timestring, function() {
 		var fd = new FormData();
 		fd.append("file", uploadFile);
@@ -317,14 +363,20 @@ function doUpload() {
 			processData: false,
 			contentType: false,
 			success: function(html) {
-				$("#cmdUpload").removeClass("busy");
-				$("#cmdUpload").html('Upload');
-				$("#cmdUpload").prop("disabled",false);
 				if(html.indexOf("Success") > -1)
 					getFileList(".");
 				else {
 					alert("Error");
 				}
+			},
+			error: function(jqxhr, status) {
+				alert(status);
+			},
+			complete: function() {
+				clearGlass();
+				$("#cmdUpload").removeClass("busy");
+				$("#cmdUpload").html('Upload');
+				$("#cmdUpload").prop("disabled",false);
 			}
 		});
 	});
@@ -424,20 +476,32 @@ function doMove() {
 	// no longer than about 155 bytes, therefore passing paths via query parameters will fail as soon as there are a
 	// few files with long paths or names.
 	// Hence I work around this by uploading the parameters as a fake file, and have lua read this file.
-	// This is still limited because the lua interpreter will easily run out of memory, but it should generally be
-	// possible to move about 32 files when using reasonably short path names.
-	// TODO: automatically split up large moves into smaller chunks and do them sequentially.
 	$("#cmdMove").prop("disabled",true);
 	$("#cmdMove").addClass("busy");
 	var target = makePath(".");
 	var query = "target=" + encodeURIComponent(target);
-	
+
+	// The limited capabilities of the lua interpreter make it impossible to move many files at once, so we have to
+	// divide the operation in chunks. About 32 files can be moved in one go when using reasonable path lengths, so
+	// I use chunks of 16 files to have some extra margin and improve responsiveness of the progress dialog.
+	var count = 0;
 	for(var selected in moveSelections) {
+		if(++count > 16)
+			break;
 		query += "&source=" + encodeURIComponent(selected);
+		delete moveSelections[selected];
 	}
-	var argpath = "/SD_WLAN";
-	var argfile = "move_arg_" + Math.round(new Date().getTime() / 1000);
+	// Only show the glass pane if the operation will take significant time.
+	if(count > 6)
+		setGlass("Moving files…", "");
+	setGlassStatus("Left to move: " + (Object.keys(moveSelections).length + count));
 	
+	var argpath = "/SD_WLAN";
+	// To eliminate any risk that the argfiles of two consecutive chunks have an identical name and the newer file
+	// might be deleted by the clean-up of the previous operation, use millisecond timestamps. The FlashAir server
+	// is almost certainly single-threaded anyway, but better safe than sorry.
+	var argfile = "move_arg_" + Math.round(new Date().getTime());
+
 	uploadDataAsFile(argpath, argfile, query, function(html) {
 		if(html.indexOf("Success") == -1) {
 			alert("Error while preparing move operation");
@@ -448,20 +512,29 @@ function doMove() {
 		if(! argpath.endsWith("/"))
 			argpath += "/";
 		$.get("/SD_WLAN/movefiles.lua?argfile=" + argpath + argfile, function(data) {
-			// Checking for responses is a mess. In this case, I should not test on indexOf("SUCCESS") != -1,
-			// because this would fail if an error occurred with a path or file that has "SUCCESS" somewhere in it.
-			if(data.indexOf("SUCCESS") == 0)
-				clearMove();
-			else {
-				alert("Error: ‘" + data + "’");
-			}
-			$("#cmdMove").removeClass("busy");
-			$("#cmdMove").prop("disabled",false);
 			$.get("/upload.cgi?DEL=" + argpath + argfile, function(data) {
 				if(data.indexOf("SUCCESS") == -1) {
 					console.log("Error while deleting temporary file ‘" + argpath + argfile + "’: " + data);
 				}
 			});
+			// Checking for responses is a mess. In this case, I should not merely test on indexOf("SUCCESS") != -1,
+			// because this would fail if an error occurred with a path or file that has "SUCCESS" somewhere in it.
+			if(data.indexOf("SUCCESS") == 0) {
+				if(Object.keys(moveSelections).length > 0)
+					doMove();
+				else {
+					clearMove();
+					clearGlass();
+				}
+			}
+			else {
+				// Abort, and leave the files that we didn't try to move selected.
+				alert("Error: ‘" + data + "’");
+				getFileList(".");
+				clearGlass();
+			}
+			$("#cmdMove").removeClass("busy");
+			$("#cmdMove").prop("disabled",false);
 		});
 	});
 }
@@ -509,9 +582,9 @@ $(function() {
 		getFileList(this.text);
 	});
 	// Register onClick handler for move checkboxes
-	$(document).on("click","input.selectMove",function() {
+	$(document).on("click","input.selectMove",function(e) {
 		var fileLink = $(this).closest(".col_file").children(".file,.dir");
-		setMoveSelection(fileLink.text(), this.checked);
+		setMoveSelection(fileLink.text(), this.checked, e.shiftKey);
 	});
 
 	// Register click for upload and folder buttons
@@ -536,5 +609,5 @@ $(function() {
 		return false;
 	});
 
-	$("#version").html("v" + version);
+	$("#version").html("FlashAirUI v" + version);
 });
