@@ -1,6 +1,6 @@
 # FlashAir UI File Interface by DrLex
 by Alexander Thomas, aka Dr. Lex<br>
-Current version: 1.1a<br>
+Current version: 1.1<br>
 Contact: visit https://www.dr-lex.be/lexmail.html<br>
 &nbsp;&nbsp;&nbsp;&nbsp;or use my gmail address "doctor.lex".
 
@@ -13,38 +13,38 @@ The code is based on the FlashAir tutorial from Toshiba, which is released under
 
 
 ## How to install
-Basically, just dump almost all the files in the /SD_WLAN directory on your FlashAir, with a few modifications. This directory may be hidden if you browse the card in Windows, so you will need to change settings to show hidden files and directories.
+Basically, just dump almost all the files in the `/SD_WLAN` directory on your FlashAir, with a few modifications. This directory may be hidden if you browse the card in Windows, so you will need to change settings to show hidden files and directories.
 
-Also download the latest compressed, production jQuery from http://jquery.com/download/, rename the file to ‘jquery.js’, and place it in /SD_WLAN/js/ on the card.
+Also download the latest compressed, production jQuery from <http://jquery.com/download/>, rename the file to ‘jquery.js’, and place it in `/SD_WLAN/js/` on the card.
 
 You need to choose whether you want to use the card in Access Point (AP) mode, or client mode. I highly recommend client mode, because uploading files in AP mode seems to be horribly slow for some reason.
-Copy either the CONFIG-AP or CONFIG-client file to SD_WLAN, and rename it to CONFIG. Edit the file in a text editor, and change the following values.
+Copy either the `CONFIG-AP` or `CONFIG-client` file to `SD_WLAN`, and rename it to CONFIG. Edit the file in a text editor, and change the following values.
 
 There are a few configurable things in the main.js file: you can opt to show a confirmation dialog when uploading files with a name longer than a certain number of characters, or when uploading files with certain extensions.
 
 ### In case of client mode:
-* ID: anything you want (is supposed to set the name for netbios or Bonjour, but I haven't seen this work in my setup).
-* DHCP_Enabled: if you set it to YES, the card will get an IP address from your router. If you can access the card through its ID set above, this will be OK. However, if you want to access it by IP address, it will be more practical to ensure it always gets the same address. Either configure your router to always hand out the same address to the card's MAC, or set DHCP_Enabled to NO and fill in the values for IP_Address, Subnet_Mask, etc.
-* APPSSID: the SSID of the WiFi network the card needs to connect to. If you have multiple access points, pick the one the card will be closest to. **IMPORTANT:** your access point must be set to channel 11 or lower. The card cannot connect to channels 12 and 13, at least not the version I have.
-* APPNETWORKKEY: the password for your WiFi. Once the card has booted with your config, this value will be overwritten with asterisks so nobody can easily read your password from the card, should they get hold of it.
-* APPAUTOTIME: this is the time in seconds the card will keep the WiFi connection running after it has booted. Rumours are that this value is irrelevant in client mode and the card stays connected, but you may want to enter a big value here just to be sure.
+* `ID`: anything you want (is supposed to set the name for netbios or Bonjour, but I haven't seen this work in my setup).
+* `DHCP_Enabled`: if you set it to YES, the card will get an IP address from your router. If you can access the card through its ID set above, this will be OK. However, if you want to access it by IP address, it will be more practical to ensure it always gets the same address. Either configure your router to always hand out the same address to the card's MAC, or set `DHCP_Enabled` to NO and fill in the values for `IP_Address`, `Subnet_Mask`, etc.
+* `APPSSID`: the SSID of the WiFi network the card needs to connect to. If you have multiple access points, pick the one the card will be closest to. **IMPORTANT:** your access point must be set to channel 11 or lower. The card cannot connect to channels 12 and 13, at least not the version I have.
+* `APPNETWORKKEY`: the password for your WiFi. Once the card has booted with your config, this value will be overwritten with asterisks so nobody can easily read your password from the card, should they get hold of it.
+* `APPAUTOTIME`: this is the time in seconds the card will keep the WiFi connection running after it has booted. Rumours are that this value is irrelevant in client mode and the card stays connected, but you may want to enter a big value here just to be sure.
 
 ### In case of AP mode:
-* APPSSID: the SSID you want to card to advertise.
-* APPNETWORKKEY: the password for accessing the card's network. As with client mode, the value will be obfuscated when the card boots, so don't forget what you entered here.
-* APPAUTOTIME: similar as above, but for AP mode this value really counts. The idea is that for battery-powered devices the card should shut off within reasonable time, but for a mains-powered 3D printer you'll again want to use a large value here.
-* APPCHANNEL: the WiFi channel the card should operate on. Again, I suspect that the card only supports channels up to 11.
+* `APPSSID`: the SSID you want to card to advertise.
+* `APPNETWORKKEY`: the password for accessing the card's network. As with client mode, the value will be obfuscated when the card boots, so don't forget what you entered here.
+* `APPAUTOTIME`: similar as above, but for AP mode this value really counts. The idea is that for battery-powered devices the card should shut off within reasonable time, but for a mains-powered 3D printer you'll again want to use a large value here.
+* `APPCHANNEL`: the WiFi channel the card should operate on. Again, I suspect that the card only supports channels up to 11.
 
 
 ## How to use
 After installing and configuring the card, unplug it and insert it into the device you want to use it in.
 
-If you have set up the card in client mode, enter http://yourCardsAddress/ in a browser, where ‘yourCardsAddress’ is either the ID you configured, or the IP_Address if you disabled DHCP. If you use it in AP mode, connect to the card's wifi network, and go to http://192.168.0.1/.
+If you have set up the card in client mode, enter http://yourCardsAddress/ in a browser, where ‘yourCardsAddress’ is either the ID you configured, or the `IP_Address` if you disabled DHCP. If you use it in AP mode, connect to the card's wifi network, and go to http://192.168.0.1/.
 
 The interface is quite straightforward, although moving files probably doesn't work the way you're used to from a typical Windows or Mac OS interface. Instead, it works more like the Android file browser: click the checkboxes to the left of the files you want to move, go to the directory where you want them to end up, and then click the ‘Move selections here’ button. You can select multiple files in multiple different folders at once.
 The ‘⨂’ icon deletes a file, the pencil (✎) icon allows to rename it. If you don't see these icons, you need a more Unicode-compliant browser or computer, the same goes for the file and folder icons (🗒, 📁) which are all plain Unicode characters.
 
-To upload a file, go to the folder where you want it, click the ‘Choose file’ button, and then ‘Upload’. You can only upload one file at a time.
+To upload a file, go to the folder where you want it, click the ‘Choose file’ button, and then ‘Upload’. You can also drag and drop a file into the main file list to immediately upload it (thanks to [etet100](https://github.com/etet100)). You can only upload one file at a time.
 
 Folders can only be deleted when they are empty, by using the ‘Delete empty folder’ button.
 

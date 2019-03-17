@@ -25,7 +25,7 @@ var warnExtensions = ["gcode"];
 
 /************************** No user serviceable parts below **************************/
 
-var version = "1.1a";
+var version = "1.1";
 
 var fileList = [];
 var fileIndices = {};  // File names vs. index in list
