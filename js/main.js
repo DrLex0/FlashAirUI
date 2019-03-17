@@ -570,8 +570,8 @@ function uploadDataAsFile(path, name, data, successFunc) {
 
 function prehandleDragEvent(e)
 {
-    e.preventDefault();
-    e.stopPropagation();    
+	e.preventDefault();
+	e.stopPropagation();
 }
 
 //Document Ready
@@ -590,18 +590,20 @@ $(function() {
 	$(document).on("click","input.selectMove",function(e) {
 		var fileLink = $(this).closest(".col_file").children(".file,.dir");
 		setMoveSelection(fileLink.text(), this.checked, e.shiftKey);
-	// Register drag/drop handlers 
+	});
+	// Register drag/drop handlers
 	$("div#content div.scrollable").on("dragover", function (e) {
-	    prehandleDragEvent(e);
-	    $(this).addClass("dragging");
+		prehandleDragEvent(e);
+		$(this).addClass("dragging");
 	}).on("dragleave", function (e) {
 		prehandleDragEvent(e);
 		$(this).removeClass("dragging");
 	}).on("drop", function (e) {
 		prehandleDragEvent(e);
-		if (e.originalEvent.dataTransfer.files.length) {
+		if(e.originalEvent.dataTransfer.files.length) {
 			$('#file').get(0).files = e.originalEvent.dataTransfer.files;
 		}
+		$(this).removeClass("dragging");
 		doUpload();
 	});
 
