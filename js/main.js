@@ -121,6 +121,15 @@ function showFreeSpace(numItems) {
 	});
 }
 
+function getFWVersion()
+{
+	var url = "/command.cgi?op=108";
+	// Issue CGI command.
+	$.get(url, function(data) {
+		$("#version").html("FlashAirUI v" + version + "; firmware " + data);
+	});
+}
+
 function setBusy() {
 	// Shows spinner in top left, for operations that should not take long
 	$("#header").children("h1").addClass("busy");
@@ -684,4 +693,5 @@ $(function() {
 	});
 
 	$("#version").html("FlashAirUI v" + version);
+	getFWVersion();
 });
