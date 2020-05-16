@@ -70,6 +70,14 @@ function escapeString(str) {
 	return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
 }
 
+function pad(val, size, pad) {
+	pad = (typeof pad !== 'undefined') ? pad : "0";
+	var out = val + "";
+	while(out.length < size)
+		out = pad + out;
+	return out
+}
+
 function fancyFileSize(bytes) {
 	if(bytes < 1e3)
 		return bytes + "&nbsp;B";
@@ -82,6 +90,19 @@ function fancyFileSize(bytes) {
 	if(bytes < 1e11)
 		return Math.round(bytes/1e7)/100 + "&nbsp;GB";
 	return Math.round(bytes/1e9) + "&nbsp;GB";
+}
+
+function makeDateString(dateNum, timeNum)
+{
+	if(dateNum == 0 && timeNum == 0)
+		return "––––/––/–– ––:––:––";
+	var day = dateNum % 32;
+	var month = (dateNum >> 5) % 16;
+	var year = (dateNum >> 9) + 1980;
+	var seconds = (timeNum % 32) * 2;
+	var minutes = (timeNum >> 5) % 64;
+	var hours = (timeNum >> 11);
+	return year + '/' + pad(month, 2) + '/' + pad(day, 2) + ' ' + pad(hours, 2) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2);
 }
 
 function showFreeSpace(numItems) {
@@ -156,9 +177,13 @@ function showFileList(path) {
 	// Output a link to the parent directory if it is not the root directory.
 	if(path != "/") {
 		table.append(
-			$("<tr></tr>").append($("<td></td>").addClass("col_file").append(
-				$('<a href="javascript:void(0)" class="dir">..</a>')
-			))
+			$("<tr></tr>").append([
+				$("<td></td>").addClass("col_check"),
+				$("<td></td>").addClass("col_del"),
+				$("<td></td>").addClass("col_ren"),
+				$("<td></td>").addClass("col_file").append(
+					$('<a href="javascript:void(0)" class="dir">..</a>'))
+			])
 		);
 	}
 	var isEmpty = true;
@@ -187,6 +212,7 @@ function showFileList(path) {
 			delLink.append('⨂');
 			filesize = fancyFileSize(file["fsize"]);
 		}
+		fileDate = makeDateString(file["fdate"], file["ftime"]);
 		renLink.attr('href', 'javascript:doRename("' + escapeString(file["fname"]) + '")');
 		renLink.append('✎');
 		// Append a file entry or directory to the end of the list.
@@ -194,10 +220,12 @@ function showFileList(path) {
 		var checkbox = $('<input type="checkbox">').addClass("selectMove");
 		if(moveSelections[pathSlashed + file["fname"]])
 			checkbox.prop('checked', true);
-		row.append($("<td></td>").addClass("col_file").append(checkbox).append(fileLink.append(caption)));
-		row.append($("<td></td>").addClass("col_size").append(filesize));
+		row.append($("<td></td>").addClass("col_check").append(checkbox));
 		row.append($("<td></td>").addClass("col_del").append(delLink));
 		row.append($("<td></td>").addClass("col_ren").append(renLink));
+		row.append($("<td></td>").addClass("col_file").append(fileLink.append(caption)));
+		row.append($("<td></td>").addClass("col_size").append(filesize));
+		row.append($("<td></td>").addClass("col_date").append(fileDate));
 		table.append(row);
 
 		fileList.push(caption);
@@ -583,12 +611,12 @@ $(function() {
 	// Show the root directory.
 	getFileList('');
 	// Register onClick handler for <a class="dir">
-	$(document).on("click","a.dir",function() {
+	$(document).on("click", "a.dir", function() {
 		getFileList(this.text);
 	});
 	// Register onClick handler for move checkboxes
-	$(document).on("click","input.selectMove",function(e) {
-		var fileLink = $(this).closest(".col_file").children(".file,.dir");
+	$(document).on("click", "input.selectMove", function(e) {
+		var fileLink = $(this).parent().parent().children(".col_file").children(".file,.dir");
 		setMoveSelection(fileLink.text(), this.checked, e.shiftKey);
 	});
 	// Register drag/drop handlers
