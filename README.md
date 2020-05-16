@@ -1,6 +1,6 @@
 # FlashAir UI File Interface by DrLex
 by Alexander Thomas, aka Dr. Lex<br>
-Current version: 1.1<br>
+Current version: 1.2<br>
 Contact: visit https://www.dr-lex.be/lexmail.html<br>
 &nbsp;&nbsp;&nbsp;&nbsp;or use my gmail address "doctor.lex".
 
@@ -44,7 +44,7 @@ If you have set up the card in client mode, enter http://yourCardsAddress/ in a 
 The interface is quite straightforward, although moving files probably doesn't work the way you're used to from a typical Windows or Mac OS interface. Instead, it works more like the Android file browser: click the checkboxes to the left of the files you want to move, go to the directory where you want them to end up, and then click the ‘Move selections here’ button. You can select multiple files in multiple different folders at once.
 The ‘⨂’ icon deletes a file, the pencil (✎) icon allows to rename it. If you don't see these icons, you need a more Unicode-compliant browser or computer, the same goes for the file and folder icons (🗒, 📁) which are all plain Unicode characters.
 
-To upload a file, go to the folder where you want it, click the ‘Choose file’ button, and then ‘Upload’. You can also drag and drop a file into the main file list to immediately upload it (thanks to [etet100](https://github.com/etet100)). You can only upload one file at a time.
+To upload files, go to the folder where you want them, click the ‘Choose files’ button, and then ‘Upload’. You can also drag and drop files into the main file list to immediately upload them (thanks to [etet100](https://github.com/etet100)). You upload multiple files at once.
 
 Folders can only be deleted when they are empty, by using the ‘Delete empty folder’ button.
 
@@ -53,9 +53,7 @@ As soon as you have made any modification to the filesystem through the web inte
 
 You cannot move a folder inside a subfolder of itself. The ‘Move selections’ folder will become greyed out in case you try it. This is not just a technical limitation, it is a blatant violation of the fabric of logic itself.
 
-You will have to upload one file at a time for now. If you want to put a huge number of files on the card, it is probably more convenient to plug it directly into your computer anyway. However, I'll try to implement multi-file upload some day…
-
-Files can only be deleted one at a time for now. Again, deleting many files will be more convenient on a computer, and making it possible to delete multiple selected files at once, is on my TODO list.
+Files can only be deleted one at a time for now. Deleting many files will be more convenient on a computer, and making it possible to delete multiple selected files at once, is on my TODO list.
 
 Some things you should **not** try in the web UI because they are likely to fail:
 1. Don't try to do two things at once. Operations that are expected to take long, will be blocked with a ‘glass pane’ to protect you from doing this, but you may still get into trouble if you start clicking around like a monkey. This is why using the card in AP mode is a bad idea because uploads can take ages and you will also be blocked out of the interface for ages.

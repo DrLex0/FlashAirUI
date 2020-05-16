@@ -25,7 +25,7 @@ var warnExtensions = ["gcode"];
 
 /************************** No user serviceable parts below **************************/
 
-var version = "1.2a";
+var version = "1.2";
 
 var fileList = [];
 var uploadQueue = [];
