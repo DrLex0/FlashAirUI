@@ -77,7 +77,8 @@ end
 target = queryFields.target[1]
 sources = queryFields.source
 
-if string.sub(target, -1) ~= "/" then
+-- Do not omit the third argument, otherwise this Lua implementation will return garbage
+if string.sub(target, -1, -1) ~= "/" then
 	target = target .. "/"
 end
 targetDir = string.gsub(target, "/$", "")
