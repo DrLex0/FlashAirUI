@@ -28,6 +28,7 @@ var warnExtensions = ["gcode"];
 var version = "1.2a";
 
 var fileList = [];
+var uploadQueue = [];
 var fileIndices = {};  // File names vs. index in list
 var lastCheckedIndex = null;
 
@@ -350,23 +351,51 @@ function checkMoveAllowed(path) {
 
 //UploadProcess
 function doUpload() {
-	var uploadFile = $('#file')[0].files[0];
-	var fileName = uploadFile.name;
-	var abort = false;
-	$.each(warnExtensions, function(index, value) {
-		if(fileName.toLowerCase().endsWith("." + value)) {
-			if(! confirm("Are you sure you want to upload a ‘." + value + "’ file?"))
-				abort = true;
+	$.each($('#file')[0].files, function(index, uploadFile) {
+		var fileName = uploadFile.name;
+		var abort = false;
+		$.each(warnExtensions, function(index, value) {
+			if(fileName.toLowerCase().endsWith("." + value)) {
+				if(! confirm("Are you sure you want to upload a ‘." + value + "’ file?"))
+					abort = true;
+				return false;
+			}
+		});
+		if(abort) {
+			uploadQueue = [];
 			return false;
 		}
+		if(maxNameLength && fileName.length > maxNameLength) {
+			if(! confirm("The file '" + fileName + "' has a name longer than " + maxNameLength +
+				     " characters (" + fileName.length + "), which may cause problems. Proceed?")) {
+				uploadQueue = [];
+				return false;
+			}
+		}
+		uploadQueue.push(uploadFile);
 	});
-	if(abort)
+
+	processUploads();
+}
+
+function processUploads() {
+	if(! uploadQueue.length) {
+		getFileList(".");
+		clearGlass();
+		$("#cmdUpload").removeClass("busy");
+		$("#cmdUpload").html('Upload');
+		$("#cmdUpload").prop("disabled", false);
 		return false;
-	if(maxNameLength && fileName.length > maxNameLength) {
-		if(! confirm("This file has a name longer than " + maxNameLength + " characters (" +
-		             fileName.length + "), which may cause problems. Proceed?"))
-			return false;
 	}
+
+	var uploadFile = uploadQueue.shift();
+	var fileName = uploadFile.name;
+	$("#cmdUpload").prop("disabled",true);
+	$("#cmdUpload").html('Uploading…');
+	$("#cmdUpload").addClass("busy");
+	var left2Do = uploadQueue.length ? "<br>Files remaining: " + uploadQueue.length : "";
+	setGlass("Uploading…", "Uploading ‘" + fileName + "’" + left2Do);
+
 	var path = makePath(".");
 	var cgi = "/upload.cgi";
 	var timestring;
@@ -375,13 +404,9 @@ function doUpload() {
 	var month = (dt.getMonth() + 1) << 5;
 	var date = dt.getDate();
 	var hours = dt.getHours() << 11;
-	var minites = dt.getMinutes() << 5;
+	var minutes = dt.getMinutes() << 5;
 	var seconds = Math.floor(dt.getSeconds() / 2);
-	timestring = "0x" + (year + month + date).toString(16) + (hours + minites + seconds).toString(16);
-	$("#cmdUpload").prop("disabled",true);
-	$("#cmdUpload").html('Uploading…');
-	$("#cmdUpload").addClass("busy");
-	setGlass("Uploading…", "Uploading ‘" + fileName + "’");
+	timestring = "0x" + (year + month + date).toString(16) + pad((hours + minutes + seconds).toString(16), 4);
 	$.get(cgi + "?WRITEPROTECT=ON&UPDIR=" + path + "&FTIME=" + timestring, function() {
 		var fd = new FormData();
 		fd.append("file", uploadFile);
@@ -391,21 +416,16 @@ function doUpload() {
 			processData: false,
 			contentType: false,
 			success: function(html) {
-				if(html.indexOf("Success") > -1)
-					getFileList(".");
-				else {
+				if(html.indexOf("Success") < 0) {
 					alert("Error");
+					uploadQueue = [];
 				}
 			},
 			error: function(jqxhr, status) {
 				alert(status);
+				uploadQueue = [];
 			},
-			complete: function() {
-				clearGlass();
-				$("#cmdUpload").removeClass("busy");
-				$("#cmdUpload").html('Upload');
-				$("#cmdUpload").prop("disabled",false);
-			}
+			complete: processUploads
 		});
 	});
 	return false;
