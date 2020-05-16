@@ -351,13 +351,19 @@ function checkMoveAllowed(path) {
 
 //UploadProcess
 function doUpload() {
+	var alreadyAsked = [];
 	$.each($('#file')[0].files, function(index, uploadFile) {
 		var fileName = uploadFile.name;
 		var abort = false;
 		$.each(warnExtensions, function(index, value) {
+			if(alreadyAsked.indexOf(value) > -1)
+				return true;
 			if(fileName.toLowerCase().endsWith("." + value)) {
 				if(! confirm("Are you sure you want to upload a ‘." + value + "’ file?"))
 					abort = true;
+				else {
+					alreadyAsked.push(value);
+				}
 				return false;
 			}
 		});
