@@ -25,12 +25,16 @@ var warnExtensions = ["gcode"];
 
 /************************** No user serviceable parts below **************************/
 
-var version = "1.2";
+var version = "1.3a";
 
 var fileList = [];
 var uploadQueue = [];
 var fileIndices = {};  // File names vs. index in list
 var lastCheckedIndex = null;
+
+// Important: any operation that changes the filesystem, must include a WRITEPROTECT call
+// to upload.cgi, to avoid inconsistencies or corruption if something else would try to
+// write to the card afterwards using stale filesystem information.
 
 // Judge the card is V1 or V2.
 function isV1(wlansd) {
@@ -91,6 +95,18 @@ function fancyFileSize(bytes) {
 	if(bytes < 1e11)
 		return Math.round(bytes/1e7)/100 + "&nbsp;GB";
 	return Math.round(bytes/1e9) + "&nbsp;GB";
+}
+
+function makeHexDate()
+{
+	var dt = new Date();
+	var year = (dt.getFullYear() - 1980) << 9;
+	var month = (dt.getMonth() + 1) << 5;
+	var date = dt.getDate();
+	var hours = dt.getHours() << 11;
+	var minutes = dt.getMinutes() << 5;
+	var seconds = Math.floor(dt.getSeconds() / 2);
+	return "0x" + (year + month + date).toString(16) + pad((hours + minutes + seconds).toString(16), 4);
 }
 
 function makeDateString(dateNum, timeNum)
@@ -413,15 +429,7 @@ function processUploads() {
 
 	var path = makePath(".");
 	var cgi = "/upload.cgi";
-	var timestring;
-	var dt = new Date();
-	var year = (dt.getFullYear() - 1980) << 9;
-	var month = (dt.getMonth() + 1) << 5;
-	var date = dt.getDate();
-	var hours = dt.getHours() << 11;
-	var minutes = dt.getMinutes() << 5;
-	var seconds = Math.floor(dt.getSeconds() / 2);
-	timestring = "0x" + (year + month + date).toString(16) + pad((hours + minutes + seconds).toString(16), 4);
+	var timestring = makeHexDate();
 	$.get(cgi + "?WRITEPROTECT=ON&UPDIR=" + path + "&FTIME=" + timestring, function() {
 		var fd = new FormData();
 		fd.append("file", uploadFile);
@@ -481,13 +489,16 @@ function doRename(fileName) {
 	setBusy();
 	var path = makePath(".");
 	var cgi = "/SD_WLAN/rename.lua";
-	$.get(cgi + "?source=" + encodeURIComponent(path + '/' + fileName) + "&name=" + encodeURIComponent(newName), function(data) {
-		if(data.indexOf("SUCCESS") == 0) {
-			getFileList(".");
-		} else {
-			alert(data);
-			clearBusy();
-		}
+	$.get("/upload.cgi?WRITEPROTECT=ON", function() {
+		$.get(cgi + "?source=" + encodeURIComponent(path + '/' + fileName) + "&name=" + encodeURIComponent(newName),
+		      function(data) {
+			if(data.indexOf("SUCCESS") == 0) {
+				getFileList(".");
+			} else {
+				alert(data);
+				clearBusy();
+			}
+		});
 	});
 	return false;
 }
@@ -505,7 +516,9 @@ function doNewDir() {
 	setBusy();
 	var path = makePath(".");
 	var cgi = "/upload.cgi";
-	$.get(cgi + "?UPDIR=" + encodeURIComponent(path + '/' + dirName), function(data) {
+	var timestring = makeHexDate();
+	$.get(cgi + "?WRITEPROTECT=ON&FTIME=" + timestring + "&UPDIR=" + encodeURIComponent(path + '/' + dirName),
+	      function(data) {
 		if(data.indexOf("SUCCESS") > -1) {
 			getFileList(dirName);
 		} else {
@@ -565,6 +578,7 @@ function doMove() {
 	// is almost certainly single-threaded anyway, but better safe than sorry.
 	var argfile = "move_arg_" + Math.round(new Date().getTime());
 
+	// This will do the WRITEPROTECT
 	uploadDataAsFile(argpath, argfile, query, function(html) {
 		if(html.indexOf("Success") == -1) {
 			alert("Error while preparing move operation");
