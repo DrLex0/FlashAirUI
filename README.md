@@ -53,6 +53,8 @@ As soon as you have made any modification to the filesystem through the web inte
 
 You cannot move a folder inside a subfolder of itself. The ‘Move selections’ folder will become greyed out in case you try it. This is not just a technical limitation, it is a blatant violation of the fabric of logic itself.
 
+If you select a file for upload, then modify the file on disk, and only then actually click the ‘Upload’ button, some browsers like Chrome will refuse to upload the file even if you re-select it without first selecting something else. I have looked for ways to work around this or at least show a meaningful error message, but found none. Refreshing the page is often the easiest way out of this.
+
 Files can only be deleted one at a time for now. Deleting many files will be more convenient on a computer, and making it possible to delete multiple selected files at once, is on my TODO list.
 
 Some things you should **not** try in the web UI because they are likely to fail:
