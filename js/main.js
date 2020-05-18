@@ -416,7 +416,7 @@ function processUploads() {
 		$("#cmdUpload").removeClass("busy");
 		$("#cmdUpload").html('Upload');
 		$("#cmdUpload").prop("disabled", false);
-		return false;
+		return;
 	}
 
 	var uploadFile = uploadQueue.shift();
@@ -451,7 +451,6 @@ function processUploads() {
 			complete: processUploads
 		});
 	});
-	return false;
 }
 
 //Delete a file
@@ -472,7 +471,6 @@ function doDelete(fileName) {
 			}
 		});
 	});
-	return false;
 }
 
 // Rename a file or folder
@@ -500,7 +498,6 @@ function doRename(fileName) {
 			}
 		});
 	});
-	return false;
 }
 
 function doNewDir() {
@@ -526,7 +523,6 @@ function doNewDir() {
 			clearBusy();
 		}
 	});
-	return false;
 }
 
 function doDelDir() {
@@ -543,7 +539,6 @@ function doDelDir() {
 			}
 		});
 	});
-	return false;
 }
 
 function doMove() {
