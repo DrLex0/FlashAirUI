@@ -28,8 +28,10 @@ var warnExtensions = ["gcode"];
 var version = "1.3a";
 
 var fileList = [];
+var moveSelections = {}; // Key = path, value = see fileTypes
 var uploadQueue = [];
-var fileIndices = {};  // File names vs. index in list
+var fileIndices = {};  // Key = name, value = file index in list
+var fileTypes = {};  // Key = name, value = 'f' for file or 'd' for dir
 var lastCheckedIndex = null;
 
 // Important: any operation that changes the filesystem, must include a WRITEPROTECT call
@@ -176,6 +178,7 @@ function showFileList(path) {
 	$("#list").html('');
 	fileList = [];
 	fileIndices = {};
+	fileTypes = {};
 	lastCheckedIndex = null;
 
 	// Construct clickable path in header
@@ -232,11 +235,13 @@ function showFileList(path) {
 		var filesize = '';
 		if(file["attr"] & 0x10) {
 			fileLink.addClass("dir");
+			fileTypes[caption] = "d";
 		} else {
 			fileLink.addClass("file").attr('href', file["r_uri"] + '/' + file["fname"]).attr("target","_blank");
 			delLink.addClass("del").attr('href', 'javascript:doDelete("' + escapeString(file["fname"]) + '")');
 			delLink.append('⨂');
 			filesize = fancyFileSize(file["fsize"]);
+			fileTypes[caption] = "f";
 		}
 		fileDate = makeDateString(file["fdate"], file["ftime"]);
 		renLink.attr('href', 'javascript:doRename("' + escapeString(file["fname"]) + '")');
@@ -265,10 +270,11 @@ function showFileList(path) {
 		$('#cmdDelDir').attr('disabled', 'disabled');
 	}
 	checkMoveAllowed(path);
+	checkMultiDelAllowed(path);
 	clearBusy();
 }
 
-//Making Path
+// Making Path
 function makePath(dir) {
 	if(dir == "")
 		return "/";
@@ -334,7 +340,7 @@ function setMoveSelection(name, checked, shiftKey) {
 	for(var i = start; i <= stop; i++) {
 		var fullPath = path + fileList[i];
 		if(checked)
-			moveSelections[fullPath] = true;
+			moveSelections[fullPath] = fileTypes[fileList[i]];
 		else if(moveSelections[fullPath]) {
 			delete moveSelections[fullPath];
 		}
@@ -344,6 +350,7 @@ function setMoveSelection(name, checked, shiftKey) {
 		showFileList(currentPath);  // refresh the whole list to update other checkboxes
 	else {
 		checkMoveAllowed(path);
+		checkMultiDelAllowed(path);
 	}
 	lastCheckedIndex = fileIndices[name];
 }
@@ -362,15 +369,44 @@ function checkMoveAllowed(path) {
 			break;
 		}
 	}
-	if(isEmpty)
+	if(isEmpty) {
 		$('#cmdClearMove').attr('disabled', 'disabled');
-	else {
+		$('#cmdClearMove').html("Clear selections");
+	} else {
 		$('#cmdClearMove').removeAttr('disabled');
+		$('#cmdClearMove').html("Clear selections (" + Object.keys(moveSelections).length + ")");
 	}
-	if(!isEmpty && moveAllowed)
+	if(!isEmpty && moveAllowed) {
 		$('#cmdMove').removeAttr('disabled');
-	else {
+	} else {
 		$('#cmdMove').attr('disabled', 'disabled');
+	}
+}
+
+function checkMultiDelAllowed(path) {
+	// Multi-delete is only allowed if all selections are files within the current path.
+	if(path != "/" && ! path.endsWith("/"))
+		path += "/";
+
+	var delAllowed = true;
+	var isEmpty = true;
+	for(var selected in moveSelections) {
+		isEmpty = false;
+		if(moveSelections[selected] == 'd') {
+			delAllowed = false;
+			break;
+		}
+		var pathItems = selected.split('/');
+		var dirName = pathItems.slice(0, pathItems.length - 1).join('/') + '/';
+		if(path != pathItems.slice(0, pathItems.length - 1).join('/') + '/') {
+			delAllowed = false;
+			break;
+		}
+	}
+	if(!isEmpty && delAllowed) {
+		$('#cmdMultiDel').removeAttr('disabled');
+	} else {
+		$('#cmdMultiDel').attr('disabled', 'disabled');
 	}
 }
 
@@ -453,23 +489,55 @@ function processUploads() {
 	});
 }
 
-//Delete a file
+// Delete a file
 function doDelete(fileName) {
 	setBusy();
-	var path = makePath(".");
-	var fullPath = path + '/' + fileName;
+	var path = makePath(fileName);
 	var cgi = "/upload.cgi";
 	$.get(cgi + "?WRITEPROTECT=ON", function() {
-		$.get(cgi + "?DEL=" + encodeURIComponent(fullPath), function(data) {
+		$.get(cgi + "?DEL=" + encodeURIComponent(path), function(data) {
 			if(data.indexOf("SUCCESS") > -1) {
-				if(moveSelections[fullPath])
-					delete moveSelections[fullPath];
+				if(moveSelections[path])
+					delete moveSelections[path];
 				getFileList(".");
 			} else {
 				alert("Error: ‘" + data + "’");
 				clearBusy();
 			}
 		});
+	});
+}
+
+// Start deleting all the selected files
+function startMultiDelete() {
+	setGlass("Deleting files…", "");
+	$.get("/upload.cgi?WRITEPROTECT=ON", function() {
+		doMultiDelete();
+	});
+}
+
+// Continue deleting all the selected files
+function doMultiDelete() {
+	var left2Del = Object.keys(moveSelections).length;
+	if(! left2Del) {
+		getFileList(".");
+		$('#cmdMultiDel').attr('disabled', 'disabled');
+		clearGlass();
+		return;
+	}
+	setGlassStatus("Left to delete: " + left2Del);
+
+	var nextToDelete = Object.keys(moveSelections)[0];
+	$.get("/upload.cgi?DEL=" + encodeURIComponent(nextToDelete), function(data) {
+		if(data.indexOf("SUCCESS") > -1) {
+			if(moveSelections[nextToDelete]) {
+				delete moveSelections[nextToDelete];
+			}
+		} else {
+			alert("Error: ‘" + data + "’");
+			moveSelections = {};
+		}
+		doMultiDelete();
 	});
 }
 
@@ -485,10 +553,13 @@ function doRename(fileName) {
 		return;
 	}
 	setBusy();
-	var path = makePath(".");
+	var path = makePath(fileName);
+	if(moveSelections[path]) {
+		delete moveSelections[path];
+	}
 	var cgi = "/SD_WLAN/rename.lua";
 	$.get("/upload.cgi?WRITEPROTECT=ON", function() {
-		$.get(cgi + "?source=" + encodeURIComponent(path + '/' + fileName) + "&name=" + encodeURIComponent(newName),
+		$.get(cgi + "?source=" + encodeURIComponent(path) + "&name=" + encodeURIComponent(newName),
 		      function(data) {
 			if(data.indexOf("SUCCESS") == 0) {
 				getFileList(".");
@@ -511,10 +582,10 @@ function doNewDir() {
 		return;
 	}
 	setBusy();
-	var path = makePath(".");
+	var path = makePath(dirName);
 	var cgi = "/upload.cgi";
 	var timestring = makeHexDate();
-	$.get(cgi + "?WRITEPROTECT=ON&FTIME=" + timestring + "&UPDIR=" + encodeURIComponent(path + '/' + dirName),
+	$.get(cgi + "?WRITEPROTECT=ON&FTIME=" + timestring + "&UPDIR=" + encodeURIComponent(path),
 	      function(data) {
 		if(data.indexOf("SUCCESS") > -1) {
 			getFileList(dirName);
@@ -614,6 +685,7 @@ function doMove() {
 function clearMove() {
 	moveSelections = {};
 	$('#cmdClearMove').attr('disabled', 'disabled');
+	$('#cmdClearMove').html("Clear selections");
 	getFileList(".");
 }
 
@@ -694,6 +766,10 @@ $(function() {
 	});
 	$("#cmdMove").click(function(e) {
 		doMove();
+		return false;
+	});
+	$("#cmdMultiDel").click(function(e) {
+		startMultiDelete();
 		return false;
 	});
 	$("#cmdClearMove").click(function(e) {
