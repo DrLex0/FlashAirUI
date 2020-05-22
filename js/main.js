@@ -25,7 +25,7 @@ var warnExtensions = ["gcode"];
 
 /************************** No user serviceable parts below **************************/
 
-var version = "1.3a";
+var version = "1.3";
 
 var fileList = [];
 var moveSelections = {}; // Key = path, value = see fileTypes

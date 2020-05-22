@@ -1,8 +1,8 @@
 # FlashAir UI File Interface by DrLex
 by Alexander Thomas, aka Dr. Lex<br>
-Current version: 1.2<br>
+Current version: 1.3<br>
 Contact: visit https://www.dr-lex.be/lexmail.html<br>
-&nbsp;&nbsp;&nbsp;&nbsp;or use my gmail address "doctor.lex".
+&nbsp;&nbsp;&nbsp;&nbsp;or use my gmail address “doctor.lex”.
 
 ## What is it?
 This is a simple but quite feature-complete web UI for the Toshiba FlashAir W-03 wireless SD card. It allows uploads, renaming, moving, and deleting files. It is specifically designed to be used with 3D printers, where it is usually only necessary to upload only a few files at a time, and either erase them after the print has completed, or move them to an archive directory.
@@ -48,6 +48,8 @@ To upload files, go to the folder where you want them, click the ‘Choose files
 
 Folders can only be deleted when they are empty, by using the ‘Delete empty folder’ button.
 
+Multiple files can be deleted at once by selecting them and clicking the ‘Delete selected files’ button, but only if all selections are files and are in the current directory.
+
 ### Limitations
 As soon as you have made any modification to the filesystem through the web interface, e.g. uploaded, moved, renamed, or deleted a file, the device the card is mounted in can no longer write to the card. It might appear as if writing works, but any changes will be lost. The idea is that you do everything through this web UI, and only read files on the device containing the card. You must force the device to re-read the card every time you have made any change to it.
 
@@ -55,13 +57,13 @@ You cannot move a folder inside a subfolder of itself. The ‘Move selections’
 
 If you select a file for upload, then modify the file on disk, and only then actually click the ‘Upload’ button, some browsers like Chrome will refuse to upload the file even if you re-select it without first selecting something else. I have looked for ways to work around this or at least show a meaningful error message, but found none. Refreshing the page is often the easiest way out of this.
 
-Files can only be deleted one at a time for now. Deleting many files will be more convenient on a computer, and making it possible to delete multiple selected files at once, is on my TODO list.
-
 Some things you should **not** try in the web UI because they are likely to fail:
 1. Don't try to do two things at once. Operations that are expected to take long, will be blocked with a ‘glass pane’ to protect you from doing this, but you may still get into trouble if you start clicking around like a monkey. This is why using the card in AP mode is a bad idea because uploads can take ages and you will also be blocked out of the interface for ages.
 2. Don't keep piling up an insane amount of files in a single directory. At some point the limited CGI interface of the FlashAir will probably bump into a limit. Spread files over multiple directories.
 3. Don't make deep directory trees. Renaming or deleting files with extremely long filesystem paths will fail.
 4. Don't use multiple consecutive spaces in file names. This will cause certain operations to fail due to limitations of the Lua interface.
+5. Don't open the UI in two browser tabs at the same time. This is not just likely to fail, it is sure to cause a total mess.
+
 
 ## Legal
 See the license file for details. Just to make it absolutely clear: this is provided without any warranties of any kind. Use at your own risk.
