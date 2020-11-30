@@ -451,13 +451,19 @@ function processUploads() {
 		clearGlass();
 		$("#cmdUpload").removeClass("busy");
 		$("#cmdUpload").html('Upload');
-		$("#cmdUpload").prop("disabled", false);
+		// Clear the upload input element. Slightly annoying because with the single-file
+		// version, it was possible to keep re-uploading the same file after modifying it.
+		// With multi-file upload, certain browsers will refuse to re-upload if any of the
+		// files have changed since selecting them. Worse, this cannot be fixed by re-
+		// selecting the same file, because browsers are stupid, especially the one from
+		// our favourite new quasi-monopolist that once vowed to never become evil. COUGH.
+		$("#file").val('');
 		return;
 	}
 
 	var uploadFile = uploadQueue.shift();
 	var fileName = uploadFile.name;
-	$("#cmdUpload").prop("disabled",true);
+	$("#cmdUpload").prop("disabled", true);
 	$("#cmdUpload").html('Uploading…');
 	$("#cmdUpload").addClass("busy");
 	var left2Do = uploadQueue.length ? "<br>Files remaining: " + uploadQueue.length : "";
@@ -775,6 +781,15 @@ $(function() {
 	$("#cmdClearMove").click(function(e) {
 		clearMove();
 		return false;
+	});
+	// Only enable upload button if something has been chosen
+	$("#file").change(function(e) {
+		if($("#file").val()) {
+			$("#cmdUpload").prop("disabled", false);
+		}
+		else {
+			$("#cmdUpload").prop("disabled", true);
+		}
 	});
 
 	$("#version").html("FlashAirUI v" + version);
