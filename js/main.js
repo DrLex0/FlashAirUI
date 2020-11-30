@@ -33,6 +33,7 @@ var uploadQueue = [];
 var fileIndices = {};  // Key = name, value = file index in list
 var fileTypes = {};  // Key = name, value = 'f' for file or 'd' for dir
 var lastCheckedIndex = null;
+var sortMode = 'da';
 
 // Important: any operation that changes the filesystem, must include a WRITEPROTECT call
 // to upload.cgi, to avoid inconsistencies or corruption if something else would try to
@@ -64,14 +65,38 @@ function convertFileList() {
 		wlansd[i]["ftime"] = Number(elements[5]);
 	}
 }
-// Callback Function for sort()
-function cmptime(a, b) {
+// Callback Functions for sort() if sortMode = 'd*'
+function cmptimeA(a, b) {
 	if( a["fdate"] == b["fdate"] ) {
 		return a["ftime"] - b["ftime"];
 	}else{
 		return a["fdate"] - b["fdate"];
 	}
 }
+function cmptimeD(b, a) {
+	if( a["fdate"] == b["fdate"] ) {
+		return a["ftime"] - b["ftime"];
+	}else{
+		return a["fdate"] - b["fdate"];
+	}
+}
+
+// Callback Functions for sort() if sortMode = 's*'
+function cmpsizeA(a, b) {
+	return a["fsize"] - b["fsize"];
+}
+function cmpsizeD(b, a) {
+	return a["fsize"] - b["fsize"];
+}
+
+// Callback Functions for sort() if sortMode = 'f*'
+function cmpnameA(a, b) {
+	return a["fname"].localeCompare(b["fname"]);
+}
+function cmpnameD(b, a) {
+	return a["fname"].localeCompare(b["fname"]);
+}
+
 
 function escapeString(str) {
 	return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
@@ -172,6 +197,18 @@ function clearGlass() {
 	$("#glassPane").css("display", "none");
 }
 
+function setSort(mode) {
+	sortMode = mode;
+	getFileList(".");
+}
+
+function makeSortBtn(mode) {
+	if(mode != sortMode) {
+		return "<span onclick='setSort(\"" + mode + "\")'>" + (mode[1] == 'a' ? '▲' : '▼') + "</span>";
+	}
+	return "<span onclick='setSort(\"" + mode + "\")'>" + (mode[1] == 'a' ? '△' : '▽') + "</span>";
+}
+
 // Show file list
 function showFileList(path) {
 	// Clear box.
@@ -203,6 +240,17 @@ function showFileList(path) {
 	$("#header").html(header);
 
 	var table = $('<table></table>').addClass('filelist');
+	table.append(
+		$("<tr></tr>").append([
+			$("<td></td>").addClass("head"),
+			$("<td></td>").addClass("head"),
+			$("<td></td>").addClass("head"),
+			$("<td></td>").addClass("head").append(makeSortBtn("fa") + ' ' + makeSortBtn("fd")),
+			$("<td></td>").addClass("head").append(makeSortBtn("sa") + ' ' + makeSortBtn("sd")),
+			$("<td></td>").addClass("head").append(makeSortBtn("da") + ' ' + makeSortBtn("dd"))
+		])
+	);
+
 	// Output a link to the parent directory if it is not the root directory.
 	if(path != "/") {
 		table.append(
@@ -315,8 +363,19 @@ function getFileList(dir) {
 		wlansd.pop();
 		// Convert to V2 format.
 		convertFileList(wlansd);
-		// Sort by date and time.
-		wlansd.sort(cmptime);
+		if(sortMode == 'dd')
+			wlansd.sort(cmptimeD);
+		else if(sortMode == 'da')
+			wlansd.sort(cmptimeA);
+		else if(sortMode == 'sd')
+			wlansd.sort(cmpsizeD);
+		else if(sortMode == 'sa')
+			wlansd.sort(cmpsizeA);
+		else if(sortMode == 'fd')
+			wlansd.sort(cmpnameD);
+		else { // 'fa'
+			wlansd.sort(cmpnameA);
+		}
 		// Show
 		showFileList(currentPath);
 		showFreeSpace(wlansd.length);
