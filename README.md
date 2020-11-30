@@ -1,6 +1,6 @@
 # FlashAir UI File Interface by DrLex
 by Alexander Thomas, aka Dr. Lex<br>
-Current version: 1.3<br>
+Current version: 1.4<br>
 Contact: visit https://www.dr-lex.be/lexmail.html<br>
 &nbsp;&nbsp;&nbsp;&nbsp;or use my gmail address “doctor.lex”.
 
